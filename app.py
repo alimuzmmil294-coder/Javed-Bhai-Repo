@@ -5,13 +5,16 @@ from typing import Optional
 
 import pandas as pd
 import streamlit as st
-from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 
-# Load environment variables from .env if present
-load_dotenv()
+# Safely load local .env file if python-dotenv is installed (bypasses ModuleNotFoundError on Streamlit Cloud)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 # ==========================================
 # 1. CONFIGURATION & CONSTANTS
@@ -198,10 +201,13 @@ def main() -> None:
     # --- Sidebar: Configuration & Manual Add ---
     with st.sidebar:
         st.header("⚙️ Configuration")
-        env_key = os.getenv("GEMINI_API_KEY", "")
+        
+        # Check Streamlit Secrets first, then fallback to environment variables
+        default_api_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
+        
         api_key = st.text_input(
             "Gemini API Key",
-            value=env_key,
+            value=default_api_key,
             type="password",
             help="Get your key from Google AI Studio. Stored in session only.",
         )
